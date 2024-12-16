@@ -29,9 +29,9 @@ variable "cluster_tls_version" {
 }
 
 variable "cluster_public_network_access" {
-  default = true
+  default = false #true
 }
 
 variable "non_ssl_port_enabled" {
-  default = true
+  default = true #false #will use only the SSL port 6380
 }
