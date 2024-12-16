@@ -35,7 +35,3 @@ variable "cluster_public_network_access" {
 variable "non_ssl_port_enabled" {
   default = true
 }
-
-
-#git filter-repo --invert-paths --path
-#redis-config/.terraform/providers/registry.terraform.io/hashicorp/azurerm/4.8.0/darwin_arm64/terraform-provider-azurerm_v4.8.0_x5
