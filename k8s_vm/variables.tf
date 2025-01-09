@@ -65,3 +65,27 @@ variable "worker1_vm_name" {
 variable "worker2_vm_name" {
   default = "new-k8s-vm-worker2"
 }
+
+variable "public_ip_master_node_name" {
+  default = "k8s-vm-master-node"
+}
+
+variable "public_ip_allocation_method" {
+  default = "Static"
+}
+
+variable "public_ip_worker_node1_name" {
+  default = "k8s-vm-worker-node1"
+}
+
+variable "public_ip_worker_node2_name" {
+  default = "k8s-vm-worker-node2"
+}
+
+variable "sku" {
+  default = "Standard"
+}
+
+# variable "nat_gateway_master_node_name" {
+#   default = "k8s-vm-nat-gateway"
+# }

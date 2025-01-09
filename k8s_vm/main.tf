@@ -27,6 +27,7 @@ resource "azurerm_network_interface" "master_node" {
     name                          = var.ip_configuration_master_node
     subnet_id                     = azurerm_subnet.internal.id
     private_ip_address_allocation = var.private_ip_address_allocation
+    public_ip_address_id          = azurerm_public_ip.master_node.id
   }
 }
 resource "azurerm_network_interface" "worker_node1" {
@@ -39,6 +40,7 @@ resource "azurerm_network_interface" "worker_node1" {
     name                          = var.ip_configuration_worker_node1
     subnet_id                     = azurerm_subnet.internal.id
     private_ip_address_allocation = var.private_ip_address_allocation
+    public_ip_address_id          = azurerm_public_ip.worker_node1.id
   }
 }
 resource "azurerm_network_interface" "worker_node2" {
@@ -51,10 +53,53 @@ resource "azurerm_network_interface" "worker_node2" {
     name                          = var.ip_configuration_worker_node2
     subnet_id                     = azurerm_subnet.internal.id
     private_ip_address_allocation = var.private_ip_address_allocation
+    public_ip_address_id          = azurerm_public_ip.worker_node2.id
   }
 }
 
+resource "azurerm_public_ip" "master_node" {
+  name                = var.public_ip_master_node_name
+  location            = azurerm_resource_group.duckling.location
+  resource_group_name = azurerm_resource_group.duckling.name
+  allocation_method   = var.public_ip_allocation_method
+  sku                 = var.sku
+  lifecycle {
+    create_before_destroy = true
+  }
+}
 
+resource "azurerm_public_ip" "worker_node1" {
+  name                = var.public_ip_worker_node1_name
+  location            = azurerm_resource_group.duckling.location
+  resource_group_name = azurerm_resource_group.duckling.name
+  allocation_method   = var.public_ip_allocation_method
+  sku                 = var.sku
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "azurerm_public_ip" "worker_node2" {
+  name                = var.public_ip_worker_node2_name
+  location            = azurerm_resource_group.duckling.location
+  resource_group_name = azurerm_resource_group.duckling.name
+  allocation_method   = var.public_ip_allocation_method
+  sku                 = var.sku
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+# resource "azurerm_nat_gateway" "master_node" {
+#   name                = var.nat_gateway_master_node_name
+#   location            = azurerm_resource_group.duckling.location
+#   resource_group_name = azurerm_resource_group.duckling.name
+#   sku_name            = var.sku
+# }
+
+# resource "azurerm_nat_gateway_public_ip_association" "master_node" {
+#   nat_gateway_id       = azurerm_nat_gateway.master_node.id
+#   public_ip_address_id = azurerm_public_ip.master_node.id
+# }
 
 resource "azurerm_virtual_machine" "master" {
   name                  = var.master_vm_name
