@@ -17,23 +17,50 @@ resource "azurerm_subnet" "internal" {
   address_prefixes     = var.subnet_name_address_prefix
 }
 
-resource "azurerm_network_interface" "main" {
-  name                = var.network_interface_name
+resource "azurerm_network_interface" "master_node" {
+  name                = var.network_interface_name_master_node
   location            = azurerm_resource_group.duckling.location
   resource_group_name = azurerm_resource_group.duckling.name
+  #   depends_on          = [azurerm_virtual_machine.master]
 
   ip_configuration {
-    name                          = var.ip_configuration
+    name                          = var.ip_configuration_master_node
+    subnet_id                     = azurerm_subnet.internal.id
+    private_ip_address_allocation = var.private_ip_address_allocation
+  }
+}
+resource "azurerm_network_interface" "worker_node1" {
+  name                = var.network_interface_name_worker_node1
+  location            = azurerm_resource_group.duckling.location
+  resource_group_name = azurerm_resource_group.duckling.name
+  #   depends_on          = [azurerm_virtual_machine.worker1]
+
+  ip_configuration {
+    name                          = var.ip_configuration_worker_node1
+    subnet_id                     = azurerm_subnet.internal.id
+    private_ip_address_allocation = var.private_ip_address_allocation
+  }
+}
+resource "azurerm_network_interface" "worker_node2" {
+  name                = var.network_interface_name_worker_node2
+  location            = azurerm_resource_group.duckling.location
+  resource_group_name = azurerm_resource_group.duckling.name
+  #   depends_on          = [azurerm_virtual_machine.worker2]
+
+  ip_configuration {
+    name                          = var.ip_configuration_worker_node2
     subnet_id                     = azurerm_subnet.internal.id
     private_ip_address_allocation = var.private_ip_address_allocation
   }
 }
 
+
+
 resource "azurerm_virtual_machine" "master" {
   name                  = var.master_vm_name
   location              = azurerm_resource_group.duckling.location
   resource_group_name   = azurerm_resource_group.duckling.name
-  network_interface_ids = [azurerm_network_interface.main.id]
+  network_interface_ids = [azurerm_network_interface.master_node.id]
   vm_size               = var.vm_size
 
   # Uncomment this line to delete the OS disk automatically when deleting the VM
@@ -49,7 +76,7 @@ resource "azurerm_virtual_machine" "master" {
     version   = "latest"
   }
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "myosdisk0"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
@@ -71,7 +98,7 @@ resource "azurerm_virtual_machine" "worker1" {
   name                  = var.worker1_vm_name
   location              = azurerm_resource_group.duckling.location
   resource_group_name   = azurerm_resource_group.duckling.name
-  network_interface_ids = [azurerm_network_interface.main.id]
+  network_interface_ids = [azurerm_network_interface.worker_node1.id]
   vm_size               = var.vm_size
 
   # Uncomment this line to delete the OS disk automatically when deleting the VM
@@ -87,7 +114,7 @@ resource "azurerm_virtual_machine" "worker1" {
     version   = "latest"
   }
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "myosdisk2"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
@@ -109,7 +136,7 @@ resource "azurerm_virtual_machine" "worker2" {
   name                  = var.worker2_vm_name
   location              = azurerm_resource_group.duckling.location
   resource_group_name   = azurerm_resource_group.duckling.name
-  network_interface_ids = [azurerm_network_interface.main.id]
+  network_interface_ids = [azurerm_network_interface.worker_node2.id]
   vm_size               = var.vm_size
 
   # Uncomment this line to delete the OS disk automatically when deleting the VM
@@ -125,7 +152,7 @@ resource "azurerm_virtual_machine" "worker2" {
     version   = "latest"
   }
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "myosdisk3"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
