@@ -1,8 +1,14 @@
+###############################################################################
+# Resource Group
+###############################################################################
 resource "azurerm_resource_group" "duckling" {
   name     = var.resource_group_name
   location = var.resource_group_location
 }
 
+###############################################################################
+# Virtual Network
+###############################################################################
 resource "azurerm_virtual_network" "main" {
   name                = var.virtual_network_name
   address_space       = var.virtual_network_address_space
@@ -10,6 +16,9 @@ resource "azurerm_virtual_network" "main" {
   resource_group_name = azurerm_resource_group.duckling.name
 }
 
+###############################################################################
+# Subnet
+###############################################################################
 resource "azurerm_subnet" "internal" {
   name                 = var.subnet_name
   resource_group_name  = azurerm_resource_group.duckling.name
@@ -17,11 +26,14 @@ resource "azurerm_subnet" "internal" {
   address_prefixes     = var.subnet_name_address_prefix
 }
 
+# MASTER NODE
+###############################################################################
+# Network Interface
+###############################################################################
 resource "azurerm_network_interface" "master_node" {
   name                = var.network_interface_name_master_node
   location            = azurerm_resource_group.duckling.location
   resource_group_name = azurerm_resource_group.duckling.name
-  #   depends_on          = [azurerm_virtual_machine.master]
 
   ip_configuration {
     name                          = var.ip_configuration_master_node
@@ -30,33 +42,18 @@ resource "azurerm_network_interface" "master_node" {
     public_ip_address_id          = azurerm_public_ip.master_node.id
   }
 }
-resource "azurerm_network_interface" "worker_node1" {
-  name                = var.network_interface_name_worker_node1
-  location            = azurerm_resource_group.duckling.location
-  resource_group_name = azurerm_resource_group.duckling.name
-  #   depends_on          = [azurerm_virtual_machine.worker1]
 
-  ip_configuration {
-    name                          = var.ip_configuration_worker_node1
-    subnet_id                     = azurerm_subnet.internal.id
-    private_ip_address_allocation = var.private_ip_address_allocation
-    public_ip_address_id          = azurerm_public_ip.worker_node1.id
-  }
-}
-resource "azurerm_network_interface" "worker_node2" {
-  name                = var.network_interface_name_worker_node2
-  location            = azurerm_resource_group.duckling.location
-  resource_group_name = azurerm_resource_group.duckling.name
-  #   depends_on          = [azurerm_virtual_machine.worker2]
-
-  ip_configuration {
-    name                          = var.ip_configuration_worker_node2
-    subnet_id                     = azurerm_subnet.internal.id
-    private_ip_address_allocation = var.private_ip_address_allocation
-    public_ip_address_id          = azurerm_public_ip.worker_node2.id
-  }
+###############################################################################
+# Network Interface Security Group Association
+###############################################################################
+resource "azurerm_network_interface_security_group_association" "master_node" {
+  network_interface_id      = azurerm_network_interface.master_node.id
+  network_security_group_id = azurerm_network_security_group.master_node.id
 }
 
+###############################################################################
+# Public IP
+###############################################################################
 resource "azurerm_public_ip" "master_node" {
   name                = var.public_ip_master_node_name
   location            = azurerm_resource_group.duckling.location
@@ -68,39 +65,54 @@ resource "azurerm_public_ip" "master_node" {
   }
 }
 
-resource "azurerm_public_ip" "worker_node1" {
-  name                = var.public_ip_worker_node1_name
+###############################################################################
+# Security Group
+###############################################################################
+resource "azurerm_network_security_group" "master_node" {
+  name                = var.nsg_master_node_name
   location            = azurerm_resource_group.duckling.location
   resource_group_name = azurerm_resource_group.duckling.name
-  allocation_method   = var.public_ip_allocation_method
-  sku                 = var.sku
-  lifecycle {
-    create_before_destroy = true
+
+  security_rule {
+    name                       = "AllowSSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowHTTP"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowHTTPS"
+    priority                   = 1003
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
   }
 }
 
-resource "azurerm_public_ip" "worker_node2" {
-  name                = var.public_ip_worker_node2_name
-  location            = azurerm_resource_group.duckling.location
-  resource_group_name = azurerm_resource_group.duckling.name
-  allocation_method   = var.public_ip_allocation_method
-  sku                 = var.sku
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-# resource "azurerm_nat_gateway" "master_node" {
-#   name                = var.nat_gateway_master_node_name
-#   location            = azurerm_resource_group.duckling.location
-#   resource_group_name = azurerm_resource_group.duckling.name
-#   sku_name            = var.sku
-# }
-
-# resource "azurerm_nat_gateway_public_ip_association" "master_node" {
-#   nat_gateway_id       = azurerm_nat_gateway.master_node.id
-#   public_ip_address_id = azurerm_public_ip.master_node.id
-# }
-
+###############################################################################
+# Virtual Machine
+###############################################################################
 resource "azurerm_virtual_machine" "master" {
   name                  = var.master_vm_name
   location              = azurerm_resource_group.duckling.location
@@ -139,6 +151,95 @@ resource "azurerm_virtual_machine" "master" {
   }
 }
 
+# WORKER NODE 1
+
+###############################################################################
+# Network Interface
+###############################################################################
+resource "azurerm_network_interface" "worker_node1" {
+  name                = var.network_interface_name_worker_node1
+  location            = azurerm_resource_group.duckling.location
+  resource_group_name = azurerm_resource_group.duckling.name
+  #   depends_on          = [azurerm_virtual_machine.worker1]
+
+  ip_configuration {
+    name                          = var.ip_configuration_worker_node1
+    subnet_id                     = azurerm_subnet.internal.id
+    private_ip_address_allocation = var.private_ip_address_allocation
+    public_ip_address_id          = azurerm_public_ip.worker_node1.id
+  }
+}
+
+###############################################################################
+# Network Interface Security Group Association
+###############################################################################
+resource "azurerm_network_interface_security_group_association" "worker_node1" {
+  network_interface_id      = azurerm_network_interface.worker_node1.id
+  network_security_group_id = azurerm_network_security_group.worker_node1.id
+}
+
+###############################################################################
+# Public IP
+###############################################################################
+resource "azurerm_public_ip" "worker_node1" {
+  name                = var.public_ip_worker_node1_name
+  location            = azurerm_resource_group.duckling.location
+  resource_group_name = azurerm_resource_group.duckling.name
+  allocation_method   = var.public_ip_allocation_method
+  sku                 = var.sku
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+###############################################################################
+# Security Group
+###############################################################################
+resource "azurerm_network_security_group" "worker_node1" {
+  name                = var.nsg_worker_node1_name
+  location            = azurerm_resource_group.duckling.location
+  resource_group_name = azurerm_resource_group.duckling.name
+
+  security_rule {
+    name                       = "AllowSSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowHTTP"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowHTTPS"
+    priority                   = 1003
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+###############################################################################
+# Virtual Machine
+###############################################################################
 resource "azurerm_virtual_machine" "worker1" {
   name                  = var.worker1_vm_name
   location              = azurerm_resource_group.duckling.location
@@ -177,7 +278,95 @@ resource "azurerm_virtual_machine" "worker1" {
   }
 }
 
-resource "azurerm_virtual_machine" "worker2" {
+# WORKER NODE 2
+###############################################################################
+# Network Interface
+###############################################################################
+resource "azurerm_network_interface" "worker_node2" {
+  name                = var.network_interface_name_worker_node2
+  location            = azurerm_resource_group.duckling.location
+  resource_group_name = azurerm_resource_group.duckling.name
+  #   depends_on          = [azurerm_virtual_machine.worker2]
+
+  ip_configuration {
+    name                          = var.ip_configuration_worker_node2
+    subnet_id                     = azurerm_subnet.internal.id
+    private_ip_address_allocation = var.private_ip_address_allocation
+    public_ip_address_id          = azurerm_public_ip.worker_node2.id
+  }
+}
+
+###############################################################################
+# Network Interface Security Group Association
+###############################################################################
+resource "azurerm_network_interface_security_group_association" "worker_node2" {
+  network_interface_id      = azurerm_network_interface.worker_node2.id
+  network_security_group_id = azurerm_network_security_group.worker_node2.id
+}
+
+###############################################################################
+# Public IP
+###############################################################################
+resource "azurerm_public_ip" "worker_node2" {
+  name                = var.public_ip_worker_node2_name
+  location            = azurerm_resource_group.duckling.location
+  resource_group_name = azurerm_resource_group.duckling.name
+  allocation_method   = var.public_ip_allocation_method
+  sku                 = var.sku
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+###############################################################################
+# Security Group
+###############################################################################
+resource "azurerm_network_security_group" "worker_node2" {
+  name                = var.nsg_worker_node2_name
+  location            = azurerm_resource_group.duckling.location
+  resource_group_name = azurerm_resource_group.duckling.name
+
+  security_rule {
+    name                       = "AllowSSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowHTTP"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowHTTPS"
+    priority                   = 1003
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+###############################################################################
+# Virtual Machine
+###############################################################################
+resource "azurerm_virtual_machine" "worker_node2" {
   name                  = var.worker2_vm_name
   location              = azurerm_resource_group.duckling.location
   resource_group_name   = azurerm_resource_group.duckling.name

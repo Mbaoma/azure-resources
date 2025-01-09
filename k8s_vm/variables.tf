@@ -86,6 +86,14 @@ variable "sku" {
   default = "Standard"
 }
 
-# variable "nat_gateway_master_node_name" {
-#   default = "k8s-vm-nat-gateway"
-# }
+variable "nsg_master_node_name" {
+  default = "k8s-vm-master-node-nsg"
+}
+
+variable "nsg_worker_node1_name" {
+  default = "k8s-vm-worker-node1-nsg"
+}
+
+variable "nsg_worker_node2_name" {
+  default = "k8s-vm-worker-node2-nsg"
+}
