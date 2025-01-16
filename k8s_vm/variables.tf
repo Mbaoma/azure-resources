@@ -97,3 +97,4 @@ variable "nsg_worker_node1_name" {
 variable "nsg_worker_node2_name" {
   default = "k8s-vm-worker-node2-nsg"
 }
+

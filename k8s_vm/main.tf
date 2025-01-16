@@ -108,6 +108,17 @@ resource "azurerm_network_security_group" "master_node" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+  security_rule {
+    name                       = "AllowOpenApi"
+    priority                   = 1004
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "6443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }
 
 ###############################################################################
@@ -235,6 +246,29 @@ resource "azurerm_network_security_group" "worker_node1" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+  security_rule {
+    name                       = "AllowKubectlNodes"
+    priority                   = 1004
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "8080"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowOpenApi"
+    priority                   = 1005
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "6443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }
 
 ###############################################################################
@@ -266,7 +300,7 @@ resource "azurerm_virtual_machine" "worker1" {
     managed_disk_type = "Standard_LRS"
   }
   os_profile {
-    computer_name  = "workernode"
+    computer_name  = "workernode1"
     admin_username = "worker1"
     admin_password = "Password12345!"
   }
@@ -361,6 +395,28 @@ resource "azurerm_network_security_group" "worker_node2" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+  security_rule {
+    name                       = "AllowKubectlNodes"
+    priority                   = 1004
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "8080"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+  security_rule {
+    name                       = "AllowOpenApi"
+    priority                   = 1005
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "6443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }
 
 ###############################################################################
@@ -392,7 +448,7 @@ resource "azurerm_virtual_machine" "worker_node2" {
     managed_disk_type = "Standard_LRS"
   }
   os_profile {
-    computer_name  = "workernode"
+    computer_name  = "workernode2"
     admin_username = "worker2"
     admin_password = "Password123456"
   }
